@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Update Complaint{% endblock %}
+
+{% block content %}
+<div style="display: flex; height: 100vh; background-color: var(--bg-light);">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-logo">Civic Hub</div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('dashboard') }}" class="sidebar-item">📊 Dashboard</a>
+            <a href="{{ url_for('officer.dashboard') }}" class="sidebar-item active">👮 My Complaints</a>
+            <a href="#" class="sidebar-item">🔔 Notifications</a>
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-item">🚪 Logout</a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Navbar -->
+        <div class="navbar">
+            <div>
+                <a href="{{ url_for('officer.dashboard') }}" style="color: var(--primary-blue); text-decoration: none; font-weight: 600; margin-bottom: 10px; display: block;">← Back to Complaints</a>
+                <h1 style="margin: 0; font-size: 24px; color: var(--text-dark);">✏️ Update Complaint</h1>
+            </div>
+            <a href="{{ url_for('auth.logout') }}" style="color: var(--text-light); text-decoration: none; cursor: pointer;">← Logout</a>
+        </div>
+
+        <!-- Content Section -->
+        <div style="padding: 30px; overflow-y: auto; max-width: 1000px;">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div style="background: #dcfce7; color: #166534; padding: 15px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid var(--success-green);">
+                        {% for message in messages %}
+                            <p style="margin: 0; font-weight: 500;">✓ {{ message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- Two Column Layout -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
+                <!-- Left: Complaint Info -->
+                <div style="background: white; border-radius: 12px; box-shadow: var(--shadow-sm); padding: 25px;">
+                    <h3 style="margin: 0 0 20px 0; color: var(--text-dark);">📋 Complaint Details</h3>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <p style="margin: 0 0 8px 0; color: var(--text-light); font-size: 12px; font-weight: 600; text-transform: uppercase;">Description</p>
+                        <p style="margin: 0; color: var(--text-dark); line-height: 1.6;">{{ complaint.description }}</p>
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <p style="margin: 0 0 8px 0; color: var(--text-light); font-size: 12px; font-weight: 600; text-transform: uppercase;">Current Status</p>
+                        <span class="status-badge status-{{ complaint.status }}">{{ complaint.status | replace('_', ' ') | title }}</span>
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <p style="margin: 0 0 8px 0; color: var(--text-light); font-size: 12px; font-weight: 600; text-transform: uppercase;">Reporter</p>
+                        <p style="margin: 0; color: var(--text-dark);">{{ complaint.user.name }}</p>
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <p style="margin: 0 0 8px 0; color: var(--text-light); font-size: 12px; font-weight: 600; text-transform: uppercase;">Filed On</p>
+                        <p style="margin: 0; color: var(--text-dark);">{{ complaint.created_at.strftime('%b %d, %Y %I:%M %p') }}</p>
+                    </div>
+
+                    {% if complaint.image_path %}
+                        <div>
+                            <p style="margin: 0 0 8px 0; color: var(--text-light); font-size: 12px; font-weight: 600; text-transform: uppercase;">Complaint Image</p>
+                            <img src="{{ url_for('static', filename=complaint.image_path) }}" alt="Complaint Image" style="max-width: 100%; border-radius: 8px; box-shadow: var(--shadow-sm);">
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Right: Update Form -->
+                <div style="background: white; border-radius: 12px; box-shadow: var(--shadow-sm); padding: 25px;">
+                    <h3 style="margin: 0 0 20px 0; color: var(--text-dark);">📝 Update Status</h3>
+                    
+                    <form method="POST" enctype="multipart/form-data">
+                        <!-- Status Selection -->
+                        <div style="margin-bottom: 20px;">
+                            <label for="status" style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-dark);">Select New Status</label>
+                            <select id="status" name="status" required style="width: 100%; padding: 12px; border: 1px solid var(--grey-medium); border-radius: 8px; font-family: inherit; font-size: 14px; cursor: pointer; color: var(--text-dark);">
+                                <option value="pending" {% if complaint.status == 'pending' %}selected{% endif %}>⏳ Pending</option>
+                                <option value="in_progress" {% if complaint.status == 'in_progress' %}selected{% endif %}>⚙️ In Progress</option>
+                                <option value="resolved" {% if complaint.status == 'resolved' %}selected{% endif %}>✅ Resolved</option>
+                            </select>
+                        </div>
+
+                        <!-- Remarks -->
+                        <div style="margin-bottom: 20px;">
+                            <label for="remarks" style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-dark);">📋 Remarks & Update Details</label>
+                            <textarea id="remarks" name="remarks" style="width: 100%; padding: 12px; border: 1px solid var(--grey-medium); border-radius: 8px; font-family: inherit; font-size: 14px; resize: vertical; min-height: 100px;" placeholder="Describe what action has been taken or what is planned..."></textarea>
+                        </div>
+
+                        <!-- Image Upload -->
+                        <div style="margin-bottom: 25px;">
+                            <label for="image" style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-dark);">📸 Proof/Resolution Image (Optional)</label>
+                            <div style="border: 2px dashed var(--grey-medium); border-radius: 8px; padding: 15px; text-align: center; cursor: pointer;" id="dropZone2">
+                                <input type="file" id="image" name="image" accept="image/*" style="display: none;" onchange="previewUpdateImage(event)">
+                                <p style="margin: 0; color: var(--text-light); font-size: 14px;">Click to upload proof image</p>
+                            </div>
+                            <img id="imagePreview2" style="margin-top: 12px; max-width: 100%; border-radius: 8px; display: none;">
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <button type="submit" class="btn btn-primary" style="padding: 12px; font-weight: 600;">✅ Update Complaint</button>
+                            <a href="{{ url_for('officer.dashboard') }}" class="btn btn-secondary" style="padding: 12px; text-decoration: none; text-align: center; font-weight: 600;">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Info Box -->
+            <div style="background: #eff6ff; border-left: 4px solid var(--primary-blue); border-radius: 8px; padding: 20px; margin-top: 25px;">
+                <p style="margin: 0 0 10px 0; color: var(--primary-blue); font-weight: 600;">ℹ️ Update Guidelines:</p>
+                <ul style="margin: 10px 0 0 0; padding-left: 20px; color: var(--primary-blue); font-size: 14px;">
+                    <li style="margin-bottom: 5px;">Provide detailed remarks about the action taken</li>
+                    <li style="margin-bottom: 5px;">Upload proof image if available (before/after photos)</li>
+                    <li>Change status to In Progress when work begins, and Resolved when complete</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function previewUpdateImage(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('imagePreview2').src = e.target.result;
+            document.getElementById('imagePreview2').style.display = 'block';
+        }
+        reader.readAsDataURL(file);
+    }
+}
+
+document.getElementById('dropZone2').addEventListener('click', () => {
+    document.getElementById('image').click();
+});
+
+document.getElementById('dropZone2').addEventListener('dragover', (e) => {
+    e.preventDefault();
+    document.getElementById('dropZone2').style.borderColor = 'var(--primary-blue)';
+    document.getElementById('dropZone2').style.backgroundColor = 'var(--bg-light)';
+});
+
+document.getElementById('dropZone2').addEventListener('dragleave', () => {
+    document.getElementById('dropZone2').style.borderColor = 'var(--grey-medium)';
+    document.getElementById('dropZone2').style.backgroundColor = 'transparent';
+});
+
+document.getElementById('dropZone2').addEventListener('drop', (e) => {
+    e.preventDefault();
+    document.getElementById('dropZone2').style.borderColor = 'var(--grey-medium)';
+    document.getElementById('dropZone2').style.backgroundColor = 'transparent';
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        document.getElementById('image').files = files;
+        previewUpdateImage({ target: { files: files } });
+    }
+});
+</script>
+
+<style>
+    .status-badge {
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 13px;
+    }
+    .status-badge.status-pending {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+    .status-badge.status-in_progress {
+        background: #fef3c7;
+        color: #92400e;
+    }
+    .status-badge.status-resolved {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    .btn-secondary {
+        background: white;
+        color: var(--primary-blue);
+        border: 1px solid var(--primary-blue);
+    }
+</style>
+{% endblock %}

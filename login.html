@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Civic Grievance System{% endblock %}
+
+{% block content %}
+<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);">
+    <div class="card" style="width: 100%; max-width: 420px; backdrop-filter: blur(10px);">
+        <!-- Header -->
+        <div style="text-align: center; margin-bottom: 35px;">
+            <div style="font-size: 48px; margin-bottom: 15px;">🔐</div>
+            <h1 style="margin: 0 0 10px 0; font-size: 28px; color: var(--text-dark);">Welcome Back</h1>
+            <p style="margin: 0; color: var(--text-light);">Sign in to your Civic Hub account</p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div style="background: #fecaca; color: var(--danger-red); padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--danger-red);">
+                    {% for message in messages %}
+                        <p style="margin: 0; font-weight: 500;">{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Form -->
+        <form method="POST">
+            <div style="margin-bottom: 20px;">
+                <label for="email" style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-dark);">Email Address</label>
+                <input type="email" id="email" name="email" required style="width: 100%; padding: 12px; border: 1px solid var(--grey-medium); border-radius: 8px; font-family: inherit;">
+            </div>
+
+            <div style="margin-bottom: 30px;">
+                <label for="password" style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-dark);">Password</label>
+                <input type="password" id="password" name="password" required style="width: 100%; padding: 12px; border: 1px solid var(--grey-medium); border-radius: 8px; font-family: inherit;">
+            </div>
+
+            <button type="submit" style="width: 100%; padding: 12px; background: var(--primary-blue); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px; transition: var(--transition);">
+                Sign In
+            </button>
+        </form>
+
+        <!-- Divider -->
+        <div style="text-align: center; margin: 25px 0; position: relative;">
+            <div style="border-bottom: 1px solid var(--grey-medium);"></div>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center;">
+            <p style="margin: 0; color: var(--text-light);">Don't have an account? 
+                <a href="{{ url_for('auth.register') }}" style="color: var(--primary-blue); text-decoration: none; font-weight: 600; transition: var(--transition);">Create one here</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

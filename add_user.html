@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Add User{% endblock %}
+
+{% block content %}
+<div style="display: flex; height: 100vh; background-color: var(--bg-light);">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-logo">Civic Hub</div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('dashboard') }}" class="sidebar-item">📊 Dashboard</a>
+            <a href="{{ url_for('admin.dashboard') }}" class="sidebar-item active">⚙️ Admin Panel</a>
+            <a href="#" class="sidebar-item">👥 Users</a>
+            <a href="#" class="sidebar-item">🏢 Departments</a>
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-item">🚪 Logout</a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Navbar -->
+        <div class="navbar">
+            <div>
+                <a href="{{ url_for('admin.dashboard') }}" style="color: var(--primary-blue); text-decoration: none; font-weight: 600; margin-bottom: 10px; display: block;">← Back to Admin Panel</a>
+                <h1 style="margin: 0; font-size: 24px; color: var(--text-dark);">➕ Add New User</h1>
+            </div>
+            <a href="{{ url_for('auth.logout') }}" style="color: var(--text-light); text-decoration: none; cursor: pointer;">← Logout</a>
+        </div>
+
+        <!-- Content Section -->
+        <div style="padding: 30px; overflow-y: auto; max-width: 800px;">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div style="background: #fecaca; color: var(--danger-red); padding: 15px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid var(--danger-red);">
+                        {% for message in messages %}
+                            <p style="margin: 0; font-weight: 500;">{{ message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- Form Card -->
+            <div style="background: white; border-radius: 12px; box-shadow: var(--shadow-sm); padding: 30px;">
+                <form method="POST">
+                    <!-- Basic Information -->
+                    <div style="margin-bottom: 25px; padding-bottom: 25px; border-bottom: 1px solid var(--grey-light);">
+                        <h3 style="margin: 0 0 20px 0; color: var(--text-dark); font-size: 16px;">👤 Personal Information</h3>
+                        
+                        <div style="margin-bottom: 16px;">
+                            <label for="name" style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-dark);">Full Name</label>
+                            <input type="text" id="name" name="name" required style="width: 100%; padding: 12px; border: 1px solid var(--grey-medium); border-radius: 8px; font-family: inherit; color: var(--text-dark);">
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <label for="email" style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-dark);">Email Address</label>
+                            <input type="email" id="email" name="email" required style="width: 100%; padding: 12px; border: 1px solid var(--grey-medium); border-radius: 8px; font-family: inherit; color: var(--text-dark);">
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <label for="phone" style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-dark);">Phone Number</label>
+                            <input type="tel" id="phone" name="phone" style="width: 100%; padding: 12px; border: 1px solid var(--grey-medium); border-radius: 8px; font-family: inherit; color: var(--text-dark);">
+                        </div>
+                    </div>
+
+                    <!-- Account Settings -->
+                    <div style="margin-bottom: 25px; padding-bottom: 25px; border-bottom: 1px solid var(--grey-light);">
+                        <h3 style="margin: 0 0 20px 0; color: var(--text-dark); font-size: 16px;">🔐 Account Settings</h3>
+                        
+                        <div style="margin-bottom: 16px;">
+                            <label for="password" style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-dark);">Password</label>
+                            <input type="password" id="password" name="password" required style="width: 100%; padding: 12px; border: 1px solid var(--grey-medium); border-radius: 8px; font-family: inherit; color: var(--text-dark);" placeholder="Minimum 6 characters">
+                        </div>
+
+                        <div>
+                            <label for="role" style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-dark);">Role</label>
+                            <select id="role" name="role" required style="width: 100%; padding: 12px; border: 1px solid var(--grey-medium); border-radius: 8px; font-family: inherit; color: var(--text-dark); cursor: pointer;" onchange="toggleDepartmentSelect()">
+                                <option value="">-- Select Role --</option>
+                                <option value="user">👤 Citizen</option>
+                                <option value="officer">👮 Officer</option>
+                                <option value="admin">👨‍💼 Administrator</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Department Assignment (Conditionally Shown) -->
+                    <div id="department-section" style="display: none; margin-bottom: 25px; padding-bottom: 25px; border-bottom: 1px solid var(--grey-light);">
+                        <h3 style="margin: 0 0 20px 0; color: var(--text-dark); font-size: 16px;">🏢 Department Assignment</h3>
+                        <label for="department_id" style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-dark);">Assign Department</label>
+                        <select id="department_id" name="department_id" style="width: 100%; padding: 12px; border: 1px solid var(--grey-medium); border-radius: 8px; font-family: inherit; color: var(--text-dark); cursor: pointer;">
+                            <option value="">-- Select Department --</option>
+                            {% for dept in departments %}
+                                <option value="{{ dept.id }}">{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <p style="margin: 8px 0 0 0; color: var(--text-light); font-size: 12px;">Officers are assigned to departments to manage complaints.</p>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <button type="submit" class="btn btn-primary" style="padding: 14px; font-size: 16px; font-weight: 600;">✅ Add User</button>
+                        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary" style="padding: 14px; font-size: 16px; font-weight: 600; text-decoration: none; text-align: center;">Cancel</a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Info Box -->
+            <div style="background: #eff6ff; border-left: 4px solid var(--primary-blue); border-radius: 8px; padding: 20px; margin-top: 25px;">
+                <p style="margin: 0 0 10px 0; color: var(--primary-blue); font-weight: 600;">ℹ️ Role Descriptions:</p>
+                <ul style="margin: 10px 0 0 0; padding-left: 20px; color: var(--primary-blue); font-size: 14px;">
+                    <li style="margin-bottom: 5px;"><strong>Citizen:</strong> Can file complaints and track their progress</li>
+                    <li style="margin-bottom: 5px;"><strong>Officer:</strong> Can view and update complaints in their assigned department</li>
+                    <li><strong>Administrator:</strong> Full system access, manage users and departments</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleDepartmentSelect() {
+    const role = document.getElementById('role').value;
+    const deptSection = document.getElementById('department-section');
+    const deptSelect = document.getElementById('department_id');
+    
+    if (role === 'officer') {
+        deptSection.style.display = 'block';
+        deptSelect.required = true;
+    } else {
+        deptSection.style.display = 'none';
+        deptSelect.required = false;
+    }
+}
+</script>
+
+<style>
+    .btn-primary, .btn-secondary {
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-family: inherit;
+        transition: var(--transition);
+    }
+    .btn-primary {
+        background: var(--primary-blue);
+        color: white;
+    }
+    .btn-primary:hover {
+        background-color: #1d4ed8;
+        transform: translateY(-2px);
+    }
+    .btn-secondary {
+        background: white;
+        color: var(--primary-blue);
+        border: 1px solid var(--primary-blue);
+    }
+    .btn-secondary:hover {
+        background-color: var(--bg-light);
+    }
+</style>
+{% endblock %}

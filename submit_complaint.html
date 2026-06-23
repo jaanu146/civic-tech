@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Complaint{% endblock %}
+
+{% block content %}
+<div style="display: flex; height: 100vh; background-color: var(--bg-light);">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-logo">Civic Hub</div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('dashboard') }}" class="sidebar-item">📊 Dashboard</a>
+            <a href="{{ url_for('complaints.submit') }}" class="sidebar-item active">📝 File Complaint</a>
+            <a href="#" class="sidebar-item">🔔 Notifications</a>
+            <a href="#" class="sidebar-item">👤 Profile</a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Navbar -->
+        <div class="navbar">
+            <h1 style="margin: 0; font-size: 24px; color: var(--text-dark);">📝 File a New Complaint</h1>
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="text-align: right;">
+                        <p style="margin: 0; font-weight: 600; color: var(--text-dark);">{{ current_user.name }}</p>
+                        <p style="margin: 0; font-size: 12px; color: var(--text-light);">Citizen</p>
+                    </div>
+                </div>
+                <a href="{{ url_for('auth.logout') }}" style="color: var(--text-light); text-decoration: none; cursor: pointer;">← Logout</a>
+            </div>
+        </div>
+
+        <!-- Content Section -->
+        <div style="padding: 30px; overflow-y: auto; max-width: 1000px;">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div style="background: #dcfce7; color: #166534; padding: 15px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid var(--success-green);">
+                        {% for message in messages %}
+                            <p style="margin: 0; font-weight: 500;">✓ {{ message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- Form Card -->
+            <div style="background: white; border-radius: 12px; box-shadow: var(--shadow-sm); padding: 30px;">
+                <form method="POST" enctype="multipart/form-data">
+                    <!-- Description Section -->
+                    <div style="margin-bottom: 25px;">
+                        <label for="description" style="display: block; font-weight: 600; margin-bottom: 10px; color: var(--text-dark); font-size: 16px;">📋 Complaint Description</label>
+                        <p style="margin: 0 0 12px 0; color: var(--text-light); font-size: 14px;">Describe the issue in detail. Be specific about location and what happened.</p>
+                        <textarea id="description" name="description" required 
+                            style="width: 100%; padding: 15px; border: 1px solid var(--grey-medium); border-radius: 8px; font-family: inherit; font-size: 14px; resize: vertical; min-height: 120px; color: var(--text-dark);" 
+                            placeholder="E.g., Pothole on Main Street near the park, water leaking from damaged pipe..."></textarea>
+                    </div>
+
+                    <!-- Image Upload Section -->
+                    <div style="margin-bottom: 25px;">
+                        <label for="image" style="display: block; font-weight: 600; margin-bottom: 10px; color: var(--text-dark); font-size: 16px;">📸 Upload Image (Optional)</label>
+                        <p style="margin: 0 0 12px 0; color: var(--text-light); font-size: 14px;">Attach a photo of the issue to help authorities understand better.</p>
+                        <div style="border: 2px dashed var(--grey-medium); border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; transition: var(--transition);" id="dropZone">
+                            <input type="file" id="image" name="image" accept="image/*" style="display: none;" onchange="previewImage(event)">
+                            <div style="font-size: 32px; margin-bottom: 10px;">📸</div>
+                            <p style="margin: 0; color: var(--text-dark); font-weight: 600;">Click to upload or drag image here</p>
+                            <p style="margin: 5px 0 0 0; color: var(--text-light); font-size: 12px;">PNG, JPG, GIF up to 5MB</p>
+                        </div>
+                        <img id="imagePreview" style="margin-top: 15px; max-width: 300px; border-radius: 8px; display: none;">
+                    </div>
+
+                    <!-- Location Section -->
+                    <div style="margin-bottom: 25px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 10px; color: var(--text-dark); font-size: 16px;">📍 Location</label>
+                        <p style="margin: 0 0 12px 0; color: var(--text-light); font-size: 14px;">Auto-detect your current location or enter coordinates manually.</p>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px;">
+                            <div>
+                                <label for="latitude" style="display: block; font-weight: 500; margin-bottom: 6px; color: var(--text-dark);">Latitude</label>
+                                <input type="text" id="latitude" name="latitude" readonly style="width: 100%; padding: 12px; border: 1px solid var(--grey-medium); border-radius: 8px; background-color: var(--bg-light); color: var(--text-dark);">
+                            </div>
+                            <div>
+                                <label for="longitude" style="display: block; font-weight: 500; margin-bottom: 6px; color: var(--text-dark);">Longitude</label>
+                                <input type="text" id="longitude" name="longitude" readonly style="width: 100%; padding: 12px; border: 1px solid var(--grey-medium); border-radius: 8px; background-color: var(--bg-light); color: var(--text-dark);">
+                            </div>
+                        </div>
+                        <button type="button" onclick="getLocation()" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 16;">📍 Get Current Location</button>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div style="display: flex; gap: 15px;">
+                        <button type="submit" class="btn btn-primary" style="flex: 1; padding: 14px; font-size: 16px; font-weight: 600;">✅ Submit Complaint</button>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary" style="flex: 1; padding: 14px; font-size: 16px; font-weight: 600; text-decoration: none; text-align: center;">Cancel</a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Info Card -->
+            <div style="background: #eff6ff; border-left: 4px solid var(--primary-blue); border-radius: 8px; padding: 20px; margin-top: 20px;">
+                <p style="margin: 0; color: var(--primary-blue); font-weight: 600;">ℹ️ How your complaint will be handled:</p>
+                <ul style="margin: 10px 0 0 0; padding-left: 20px; color: var(--primary-blue);">
+                    <li style="margin-bottom: 5px;">Your complaint will be automatically categorized by department</li>
+                    <li style="margin-bottom: 5px;">Assigned to relevant officers for action within 7 days</li>
+                    <li>You can track progress and receive updates in real-time</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function getLocation() {
+    if (navigator.geolocation) {
+        if (document.getElementById('latitude').value) {
+            alert('📍 Location already set. Clear fields to reset.');
+            return;
+        }
+        const btn = event.target;
+        btn.textContent = '⏳ Getting location...';
+        btn.disabled = true;
+        
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                document.getElementById('latitude').value = position.coords.latitude.toFixed(6);
+                document.getElementById('longitude').value = position.coords.longitude.toFixed(6);
+                btn.textContent = '✅ Location set!';
+                setTimeout(() => {
+                    btn.textContent = '📍 Get Current Location';
+                    btn.disabled = false;
+                }, 2000);
+            },
+            function(error) {
+                alert('❌ Could not get location: ' + error.message);
+                btn.textContent = '📍 Get Current Location';
+                btn.disabled = false;
+            }
+        );
+    } else {
+        alert('❌ Geolocation is not supported by this browser.');
+    }
+}
+
+function previewImage(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('imagePreview').src = e.target.result;
+            document.getElementById('imagePreview').style.display = 'block';
+        }
+        reader.readAsDataURL(file);
+    }
+}
+
+// Click handler for drop zone
+document.getElementById('dropZone').addEventListener('click', () => {
+    document.getElementById('image').click();
+});
+
+// Drag and drop handlers
+document.getElementById('dropZone').addEventListener('dragover', (e) => {
+    e.preventDefault();
+    document.getElementById('dropZone').style.borderColor = 'var(--primary-blue)';
+    document.getElementById('dropZone').style.backgroundColor = 'var(--bg-light)';
+});
+
+document.getElementById('dropZone').addEventListener('dragleave', () => {
+    document.getElementById('dropZone').style.borderColor = 'var(--grey-medium)';
+    document.getElementById('dropZone').style.backgroundColor = 'transparent';
+});
+
+document.getElementById('dropZone').addEventListener('drop', (e) => {
+    e.preventDefault();
+    document.getElementById('dropZone').style.borderColor = 'var(--grey-medium)';
+    document.getElementById('dropZone').style.backgroundColor = 'transparent';
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        document.getElementById('image').files = files;
+        previewImage({ target: { files: files } });
+    }
+});
+</script>
+
+<style>
+    .btn {
+        transition: var(--transition);
+    }
+    .btn-primary:hover {
+        background-color: #1d4ed8;
+        transform: translateY(-2px);
+    }
+    .btn-secondary {
+        background: white;
+        color: var(--primary-blue);
+        border: 1px solid var(--primary-blue);
+    }
+    .btn-secondary:hover {
+        background-color: var(--bg-light);
+    }
+</style>
+{% endblock %}

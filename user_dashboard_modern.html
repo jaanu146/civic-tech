@@ -1,0 +1,442 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - AI Civic Grievance System{% endblock %}
+
+{% block content %}
+<div class="layout-wrapper">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <span class="nav-icon">🏛️</span>
+                <span>Civic Hub</span>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <li class="nav-item">
+                <a href="{{ url_for('dashboard') }}" class="nav-link active">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('complaints.submit') }}" class="nav-link">
+                    <span class="nav-icon">📝</span>
+                    <span>File Complaint</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#notifications" class="nav-link">
+                    <span class="nav-icon">🔔</span>
+                    <span>Notifications</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#profile" class="nav-link">
+                    <span class="nav-icon">👤</span>
+                    <span>Profile</span>
+                </a>
+            </li>
+        </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <!-- NAVBAR -->
+        <nav class="navbar">
+            <div class="navbar-left">
+                <h2 class="navbar-title">Dashboard</h2>
+            </div>
+            <div class="navbar-right">
+                <div class="notification-bell" onclick="toggleNotifications()">
+                    🔔
+                    {% if notifications %}
+                        <span class="badge">{{ notifications|length }}</span>
+                    {% endif %}
+                </div>
+                <div class="user-profile">
+                    <div class="user-avatar">{{ current_user.name[0]|upper }}</div>
+                    <div class="user-info">
+                        <h4>{{ current_user.name }}</h4>
+                        <p>User</p>
+                    </div>
+                </div>
+                <a href="{{ url_for('auth.logout') }}" class="logout-btn">Logout</a>
+            </div>
+        </nav>
+
+        <!-- CONTENT -->
+        <div class="content">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for message in messages %}
+                            ✓ {{ message }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- Header Section -->
+            <div style="margin-bottom: 40px;">
+                <h1 class="section-title">Welcome back, {{ current_user.name }}! 👋</h1>
+                <p class="section-subtitle">Track your civic complaints with AI-powered insights</p>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-label">Total Complaints</div>
+                    <div class="stat-value">{{ complaints|length }}</div>
+                </div>
+                <div class="stat-card pending">
+                    <div class="stat-label">Pending</div>
+                    <div class="stat-value">{{ complaints|selectattr('status', 'equalto', 'pending')|list|length }}</div>
+                </div>
+                <div class="stat-card in-progress">
+                    <div class="stat-label">In Progress</div>
+                    <div class="stat-value">{{ complaints|selectattr('status', 'equalto', 'in_progress')|list|length }}</div>
+                </div>
+                <div class="stat-card resolved">
+                    <div class="stat-label">Resolved</div>
+                    <div class="stat-value">{{ complaints|selectattr('status', 'equalto', 'resolved')|list|length }}</div>
+                </div>
+            </div>
+
+            <!-- Your Complaints Section -->
+            <div style="margin-bottom: 50px;">
+                <h2 class="section-title">Your Complaints</h2>
+                <p class="section-subtitle">AI-tracked complaints with real-time updates</p>
+
+                {% if complaints %}
+                    <div class="complaints-grid">
+                        {% for complaint in complaints %}
+                            <div class="complaint-card">
+                                <!-- Image -->
+                                <div class="complaint-image">
+                                    {% if complaint.image_path %}
+                                        <img src="{{ url_for('static', filename=complaint.image_path) }}" alt="Complaint">
+                                    {% else %}
+                                        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-light);">
+                                            📸 No Image
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Body -->
+                                <div class="complaint-body">
+                                    <!-- Header -->
+                                    <div class="complaint-header">
+                                        <div>
+                                            <h3 class="complaint-title">{{ complaint.description[:50] }}...</h3>
+                                            <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                                                {% if complaint.ai_assigned %}
+                                                    <span class="ai-badge">
+                                                        <span>🤖</span>
+                                                        <span>AI Assigned</span>
+                                                    </span>
+                                                {% endif %}
+                                                <span class="priority-indicator priority-{{ complaint.priority }}">
+                                                    {{ complaint.priority|upper }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <span class="status-badge status-{{ complaint.status }}">{{ complaint.status|replace('_', ' ')|title }}</span>
+                                    </div>
+
+                                    <!-- Department & Type Badge -->
+                                    <div style="display: flex; align-items: center; gap: 12px; margin: 12px 0;">
+                                        <div class="complaint-type-icon {{ complaint.complaint_type }}">
+                                            {% if complaint.complaint_type == 'road' %}
+                                                🛣️
+                                            {% elif complaint.complaint_type == 'water' %}
+                                                💧
+                                            {% elif complaint.complaint_type == 'garbage' %}
+                                                🗑️
+                                            {% elif complaint.complaint_type == 'light' %}
+                                                💡
+                                            {% elif complaint.complaint_type == 'health' %}
+                                                🏥
+                                            {% elif complaint.complaint_type == 'safety' %}
+                                                🚨
+                                            {% else %}
+                                                📋
+                                            {% endif %}
+                                        </div>
+                                        {% if complaint.department %}
+                                            <span class="dept-badge dept-{{ complaint.complaint_type }}">
+                                                {{ complaint.department.name }}
+                                            </span>
+                                        {% else %}
+                                            <span class="dept-badge" style="background: var(--grey-dark);">
+                                                Unassigned
+                                            </span>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Escalation Level -->
+                                    <div style="margin: 12px 0; padding: 10px; background: var(--grey-lighter); border-radius: 6px;">
+                                        <span style="font-size: 12px; color: var(--text-light); font-weight: 600;">Escalation Level</span>
+                                        <div style="display: flex; gap: 8px; margin-top: 8px;">
+                                            {% for i in range(1, 4) %}
+                                                <div style="flex: 1; height: 6px; background: {% if i <= complaint.escalation_level %}var(--primary-blue){% else %}var(--grey-medium){% endif %}; border-radius: 3px; transition: var(--transition-fast);"></div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+
+                                    <!-- Meta Info -->
+                                    <div class="complaint-meta">
+                                        <div class="complaint-meta-item">
+                                            <span>📅</span>
+                                            <span>{{ complaint.created_at.strftime('%d %b %Y') }}</span>
+                                        </div>
+                                        <div class="complaint-meta-item">
+                                            <span>⏰</span>
+                                            <span>{{ complaint.deadline.strftime('%d %b') if complaint.deadline else 'N/A' }}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Description -->
+                                    <p class="complaint-description">{{ complaint.description[:100] }}...</p>
+
+                                    <!-- Progress Bar -->
+                                    <div class="progress-container">
+                                        <div class="progress-label">
+                                            <span>Progress</span>
+                                            <span>
+                                                {% if complaint.status == 'pending' %}
+                                                    20%
+                                                {% elif complaint.status == 'in_progress' %}
+                                                    60%
+                                                {% else %}
+                                                    100%
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill {{ complaint.status }}"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Actions -->
+                                    <div class="complaint-actions">
+                                        <a href="{{ url_for('complaints.view', complaint_id=complaint.id) }}" class="btn btn-primary">
+                                            👁️ View Details
+                                        </a>
+                                        {% if complaint.id not in upvotes %}
+                                            <form method="POST" action="{{ url_for('complaints.upvote', complaint_id=complaint.id) }}" style="flex: 1;">
+                                                <button type="submit" class="btn btn-upvote" style="width: 100%;">
+                                                    👍 <span class="upvote-count">({{ complaint.upvotes|length }})</span>
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <button class="btn btn-upvote upvoted" style="width: 100%;">
+                                                ✓ <span class="upvote-count">({{ complaint.upvotes|length }})</span>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="card" style="text-align: center; padding: 60px 20px;">
+                        <p style="font-size: 48px; margin: 0;">📋</p>
+                        <p style="color: var(--text-light); margin-top: 15px; font-size: 16px;">No complaints filed yet</p>
+                        <a href="{{ url_for('complaints.submit') }}" class="btn btn-primary" style="max-width: 200px; margin-top: 20px; display: inline-flex; text-decoration: none;">
+                            📝 File Your First Complaint
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Community Complaints Section -->
+            <div>
+                <h2 class="section-title">Community Complaints</h2>
+                <p class="section-subtitle">Support complaints from other citizens - your voice matters!</p>
+
+                {% if all_complaints %}
+                    <div class="complaints-grid">
+                        {% for complaint in all_complaints %}
+                            <div class="complaint-card">
+                                <!-- Image -->
+                                <div class="complaint-image">
+                                    {% if complaint.image_path %}
+                                        <img src="{{ url_for('static', filename=complaint.image_path) }}" alt="Complaint">
+                                    {% else %}
+                                        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-light);">
+                                            📸 No Image
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Body -->
+                                <div class="complaint-body">
+                                    <!-- Header -->
+                                    <div class="complaint-header">
+                                        <div>
+                                            <h3 class="complaint-title">{{ complaint.description[:50] }}...</h3>
+                                            <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                                                {% if complaint.ai_assigned %}
+                                                    <span class="ai-badge" style="animation: none; box-shadow: none;">
+                                                        <span>🤖</span>
+                                                        <span>AI Assigned</span>
+                                                    </span>
+                                                {% endif %}
+                                                <span class="priority-indicator priority-{{ complaint.priority }}">
+                                                    {{ complaint.priority|upper }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <span class="status-badge status-{{ complaint.status }}">{{ complaint.status|replace('_', ' ')|title }}</span>
+                                    </div>
+
+                                    <!-- Department & Type -->
+                                    <div style="display: flex; align-items: center; gap: 12px; margin: 12px 0;">
+                                        <div class="complaint-type-icon {{ complaint.complaint_type }}">
+                                            {% if complaint.complaint_type == 'road' %}
+                                                🛣️
+                                            {% elif complaint.complaint_type == 'water' %}
+                                                💧
+                                            {% elif complaint.complaint_type == 'garbage' %}
+                                                🗑️
+                                            {% elif complaint.complaint_type == 'light' %}
+                                                💡
+                                            {% elif complaint.complaint_type == 'health' %}
+                                                🏥
+                                            {% elif complaint.complaint_type == 'safety' %}
+                                                🚨
+                                            {% else %}
+                                                📋
+                                            {% endif %}
+                                        </div>
+                                        {% if complaint.department %}
+                                            <span class="dept-badge dept-{{ complaint.complaint_type }}">
+                                                {{ complaint.department.name }}
+                                            </span>
+                                        {% else %}
+                                            <span class="dept-badge" style="background: var(--grey-dark);">
+                                                Unassigned
+                                            </span>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Meta Info -->
+                                    <div class="complaint-meta">
+                                        <div class="complaint-meta-item">
+                                            <span>👥</span>
+                                            <span>{{ complaint.upvotes|length }} Supporters</span>
+                                        </div>
+                                        <div class="complaint-meta-item">
+                                            <span>📍</span>
+                                            <span>{{ complaint.department.name if complaint.department else 'Unassigned' }}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Description -->
+                                    <p class="complaint-description">{{ complaint.description[:100] }}...</p>
+
+                                    <!-- Progress Bar -->
+                                    <div class="progress-container">
+                                        <div class="progress-label">
+                                            <span>Progress</span>
+                                            <span>
+                                                {% if complaint.status == 'pending' %}
+                                                    20%
+                                                {% elif complaint.status == 'in_progress' %}
+                                                    60%
+                                                {% else %}
+                                                    100%
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill {{ complaint.status }}"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Actions -->
+                                    <div class="complaint-actions">
+                                        <a href="{{ url_for('complaints.view', complaint_id=complaint.id) }}" class="btn btn-primary">
+                                            👁️ View
+                                        </a>
+                                        {% if complaint.id not in upvotes %}
+                                            <form method="POST" action="{{ url_for('complaints.upvote', complaint_id=complaint.id) }}" style="flex: 1;">
+                                                <button type="submit" class="btn btn-upvote" style="width: 100%;">
+                                                    👍 ({{ complaint.upvotes|length }})
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <button class="btn btn-upvote upvoted" style="width: 100%;">
+                                                ✓ ({{ complaint.upvotes|length }})
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="card" style="text-align: center; padding: 60px 20px;">
+                        <p style="font-size: 48px; margin: 0;">🌍</p>
+                        <p style="color: var(--text-light); margin-top: 15px; font-size: 16px;">No community complaints yet</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Notifications Panel -->
+            {% if notifications %}
+                <div style="margin-top: 50px;" id="notifications">
+                    <h2 class="section-title">Recent Notifications</h2>
+                    <div class="card">
+                        <div style="display: flex; flex-direction: column; gap: 0;">
+                            {% for notification in notifications %}
+                                <div style="padding: 15px; border-bottom: 1px solid var(--grey-medium); display: flex; gap: 15px; align-items: flex-start; transition: var(--transition); cursor: pointer;" onmouseover="this.style.backgroundColor='var(--grey-lighter)'" onmouseout="this.style.backgroundColor='transparent';">
+                                    <span style="font-size: 20px; flex-shrink: 0;">🔔</span>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <p style="margin: 0 0 5px 0; color: var(--text-dark); font-weight: 500;">{{ notification.message }}</p>
+                                        <p style="margin: 0; font-size: 12px; color: var(--text-light);">{{ notification.created_at.strftime('%d %b %Y, %H:%M') }}</p>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Additional inline animations */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .complaint-card {
+        animation: fadeIn 0.5s ease;
+    }
+
+    .stat-card {
+        animation: fadeIn 0.6s ease;
+    }
+</style>
+
+<script>
+function toggleNotifications() {
+    const notifSection = document.getElementById('notifications');
+    if (notifSection) {
+        notifSection.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Civic Grievance System{% endblock %}
+
+{% block content %}
+<div class="layout-wrapper">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                🏛️ Civic AI
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('dashboard') }}" class="nav-link active">📊 Dashboard</a>
+            <a href="{{ url_for('complaints.submit') }}" class="nav-link">📝 File Complaint</a>
+            <a href="#notifications" class="nav-link">🔔 Notifications</a>
+        </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main-content">
+
+        <!-- NAVBAR -->
+        <div class="navbar">
+            <h2>Dashboard</h2>
+
+            <div class="nav-right">
+                <div class="notification-bell">
+                    🔔
+                    {% if notification_count %}
+                        <span class="badge">{{ notification_count }}</span>
+                    {% endif %}
+                </div>
+
+                <div class="user-box">
+                    {{ current_user.name }}
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+
+            <h1>Welcome, {{ current_user.name }} 👋</h1>
+
+            <!-- YOUR COMPLAINTS -->
+            <h2>Your Complaints</h2>
+
+            <div class="complaints-grid">
+                {% for complaint in complaints %}
+                <div class="complaint-card">
+
+                    <!-- AI + PRIORITY -->
+                    <div class="top-row">
+                        {% if complaint.ai_assigned %}
+                            <span class="ai-tag">🤖 AI Assigned</span>
+                        {% endif %}
+
+                        <span class="priority {{ complaint.get_priority_color() }}">
+                            {{ complaint.priority }}
+                        </span>
+                    </div>
+
+                    <!-- TITLE -->
+                    <h3>{{ complaint.description[:50] }}</h3>
+
+                    <!-- DEPARTMENT -->
+                    <p>
+                        🏢 {{ complaint.department.name if complaint.department else 'Unassigned' }}
+                    </p>
+
+                    <!-- TYPE ICON -->
+                    <p>
+                        {% if complaint.complaint_type == 'road' %} 🛣️ Road
+                        {% elif complaint.complaint_type == 'water' %} 💧 Water
+                        {% elif complaint.complaint_type == 'garbage' %} 🗑️ Garbage
+                        {% elif complaint.complaint_type == 'light' %} 💡 Light
+                        {% else %} 📌 General
+                        {% endif %}
+                    </p>
+
+                    <!-- STATUS -->
+                    <p>Status: {{ complaint.status }}</p>
+
+                    <!-- ESCALATION -->
+                    <div class="escalation">
+                        {% for step in complaint.get_escalation_steps() %}
+                            <span class="{% if step.active %}active-step{% endif %}">●</span>
+                        {% endfor %}
+                    </div>
+
+                    <!-- TIMELINE -->
+                    <div class="timeline">
+                        {% for event in complaint.timeline[:2] %}
+                            <p>• {{ event.title }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <!-- BUTTON -->
+                    <a href="{{ url_for('complaints.view', complaint_id=complaint.id) }}" class="btn">
+                        View
+                    </a>
+
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- COMMUNITY -->
+            <h2>Community Complaints</h2>
+
+            <div class="complaints-grid">
+                {% for complaint in all_complaints %}
+                <div class="complaint-card">
+
+                    <h3>{{ complaint.description[:50] }}</h3>
+
+                    <p>
+                        🏢 {{ complaint.department.name if complaint.department else 'Unassigned' }}
+                    </p>
+
+                    <p>⬆️ {{ complaint.upvotes|length }} Upvotes</p>
+
+                    <a href="{{ url_for('complaints.view', complaint_id=complaint.id) }}" class="btn">
+                        View
+                    </a>
+
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- NOTIFICATIONS -->
+            {% if notifications %}
+            <div id="notifications">
+                <h2>Notifications</h2>
+
+                {% for notification in notifications %}
+                    <div class="notification-item">
+                        🔔 {{ notification.message }}
+                    </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}
